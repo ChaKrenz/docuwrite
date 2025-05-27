@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuWrite - Document Editor</title>
+    <!-- Include html2pdf.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .document-title {
+            font-size: 18px;
+            border: none;
+            padding: 12px 16px;
+            margin-left: 24px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            font-weight: 500;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            min-width: 250px;
+        }
+
+        .document-title:focus {
+            outline: none;
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .save-btn, .documents-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-btn:hover, .documents-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .save-status {
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-status.saved {
+            color: #10b981;
+        }
+
+        .save-status.saving {
+            color: #f59e0b;
+        }
+
+        .toolbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            min-height: 72px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+
+        .toolbar-btn {
+            background: white;
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.2s ease;
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .toolbar-btn:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+
+        .toolbar-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .font-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .font-select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 140px;
+            transition: all 0.2s ease;
+        }
+
+        .font-select:hover {
+            border-color: #667eea;
+        }
+
+        .font-size-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .size-input {
+            border: none;
+            padding: 6px 8px;
+            width: 50px;
+            text-align: center;
+            font-size: 14px;
+            background: transparent;
+        }
+
+        .size-input:focus {
+            outline: none;
+        }
+
+        /* Hide number input spinners */
+        .size-input::-webkit-outer-spin-button,
+        .size-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .size-input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .size-btn {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .size-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .document-container {
+            max-width: 816px;
+            width: 100%;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            min-height: 800px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        .editor {
+            padding: 60px 80px;
+            min-height: 700px;
+            outline: none;
+            font-size: 12pt;
+            line-height: 1.6;
+            font-family: 'Times New Roman', serif;
+            flex: 1;
+            background: white;
+            position: relative;
+        }
+
+        .editor:focus {
+            background: #fefefe;
+        }
+
+        @media print {
+            /* Hide all UI elements */
+            .header, .toolbar, .status-bar, .speech-btn {
+                display: none !important;
+            }
+
+            /* Reset body and container styles for printing */
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            .app-container {
+                display: block;
+            }
+
+            .main-content {
+                padding: 0;
+            }
+
+            .document-container {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: none;
+                width: 100%;
+            }
+
+            .editor {
+                padding: 0;
+                margin: 0;
+                min-height: auto;
+                height: auto;
+            }
+
+            /* Set page margins and size */
+            @page {
+                margin: 2cm;
+                size: A4;
+            }
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: rgba(249, 250, 251, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            padding: 12px 24px;
+            font-size: 14px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            width: auto;
+            z-index: 1000;
+            border-top-right-radius: 12px;
+        }
+
+        .word-count {
+            display: flex;
+            gap: 24px;
+        }
+
+        .zoom-controls {
+            display: none; /* Hide zoom controls since we're only showing word count */
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom dropdown styles */
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            background: white;
+            user-select: none;
+            transition: all 0.2s ease;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .custom-dropdown:hover {
+            border-color: #667eea;
+        }
+
+        .custom-dropdown .dropdown-content {
+            display: none; /* Hidden by default */
+            position: absolute;
+            background-color: white;
+            min-width: 180px; /* Adjust width as needed */
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1; /* Stay on top */
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 0;
+            top: 100%; /* Position below the button */
+            left: 0;
+            margin-top: 8px; /* Space between button and dropdown */
+        }
+
+        .custom-dropdown .dropdown-content .dropdown-item {
+            color: #333;
+            padding: 10px 16px; /* Adjust padding */
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            font-size: 14px; /* Match parent font size */
+            transition: background-color 0.2s ease;
+        }
+
+        .custom-dropdown .dropdown-content .dropdown-item:hover {
+            background-color: #f3f4f6; /* Highlight on hover */
+        }
+
+        .custom-dropdown.active .dropdown-content { /* Use active class to show */
+            display: block;
+        }
+
+        .align-indent-select, .line-spacing-select {
+            min-width: 120px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px;
+            }
+
+            .document-title {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .toolbar {
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .toolbar-group {
+                padding: 6px 8px;
+            }
+
+            .toolbar-btn {
+                padding: 6px 8px;
+                min-width: 32px;
+                height: 32px;
+            }
+
+            .custom-dropdown {
+                min-width: 100px;
+                padding: 6px 8px;
+            }
+
+            .editor {
+                padding: 40px 24px;
+            }
+        }
+
+        /* Speech to Text Button Styles */
+        .speech-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5253);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* AI Assist Button Styles */
+        #aiAssistBtn {
+            bottom: 100px; /* Position above the speech button */
+            background: linear-gradient(45deg, #ff6b6b, #ee5253); /* Same red gradient as speech button */
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        #aiAssistBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+        }
+
+        #aiAssistBtn:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .speech-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+        }
+
+        .speech-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .speech-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Editor Page -->
+        <div id="editorPage" class="editor-page">
+            <div class="header">
+                <div style="display: flex; align-items: center; flex: 1;">
+                    <div class="logo">
+                        📝 DocuWrite
+                    </div>
+                    <input type="text" class="document-title" value="Untitled Document" id="docTitle" placeholder="Document title...">
+                </div>
+                <div class="header-actions">
+                    <div class="save-status" id="saveStatus">
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        <span>Ready</span>
+                    </div>
+                    <button class="save-btn" id="saveBtn" onclick="saveDocument()">
+                        💾 Save
+                    </button>
+                    <button class="documents-btn" onclick="showDocumentsPage()">
+                        📁 My Documents
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="document.execCommand('undo')" title="Undo">↶</button>
+                    <button class="toolbar-btn" onclick="document.execCommand('redo')" title="Redo">↷</button>
+                </div>
+
+                <div class="toolbar-group font-controls">
+                    <!-- Custom Font Dropdown -->
+                    <div class="font-select custom-dropdown" id="fontSelect">
+                        <span class="selected-font">Arial</span> <!-- Default selected font -->
+                        <div class="dropdown-content" id="fontDropdown">
+                            <!-- Font options will be populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="font-size-control">
+                        <button class="size-btn" onclick="changeFontSize(-1)">−</button>
+                        <input type="number" class="size-input" value="12" id="fontSizeInput" onchange="changeFontSize(0)" min="8" max="72">
+                        <button class="size-btn" onclick="changeFontSize(1)">+</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="toggleFormat('bold')" title="Bold"><strong>B</strong></button>
+                    <button class="toolbar-btn" onclick="toggleFormat('italic')" title="Italic"><em>I</em></button>
+                    <button class="toolbar-btn" onclick="toggleFormat('underline')" title="Underline"><u>U</u></button>
+                </div>
+
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="window.print()" title="Print">🖨️</button>
+                </div>
+
+                <!-- New Toolbar Groups based on screenshot -->
+                <div class="toolbar-group">
+                    <!-- Alignment and Indent Dropdown -->
+                    <div class="align-indent-select custom-dropdown" id="alignIndentSelect">
+                        <span class="selected-align">Align</span>
+                        <div class="dropdown-content" id="alignIndentDropdown">
+                            <div class="dropdown-item" onclick="setAlignment('left')">Align Left</div>
+                            <div class="dropdown-item" onclick="setAlignment('center')">Align Center</div>
+                            <div class="dropdown-item" onclick="setAlignment('right')">Align Right</div>
+                            <div class="dropdown-item" onclick="setAlignment('justify')">Justify</div>
+                            <div class="dropdown-item" onclick="document.execCommand('indent');">Increase Indent</div>
+                            <div class="dropdown-item" onclick="document.execCommand('outdent');">Decrease Indent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-group">
+                    <!-- Line Spacing Dropdown -->
+                    <div class="line-spacing-select custom-dropdown" id="lineSpacingSelect">
+                        <span class="selected-spacing">Line Spacing</span>
+                        <div class="dropdown-content" id="lineSpacingDropdown">
+                            <div class="dropdown-item" onclick="setLineSpacing('1')">Single</div>
+                            <div class="dropdown-item" onclick="setLineSpacing('1.15')">1.15</div>
+                            <div class="dropdown-item" onclick="setLineSpacing('1.5')">1.5</div>
+                            <div class="dropdown-item" onclick="setLineSpacing('2')">Double</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Toolbar Group for Export -->
+                <div class="toolbar-group">
+                     <div class="custom-dropdown" id="exportSelect">
+                        <span class="selected-export">Export</span>
+                        <div class="dropdown-content" id="exportDropdown">
+                            <div class="dropdown-item" onclick="exportDocument('pdf')">Export as PDF</div>
+                            <div class="dropdown-item" onclick="exportDocument('txt')">Export as TXT</div>
+                            <!-- Add more export formats here if needed -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="document-container">
+                    <div class="editor" contenteditable="true" id="editor" onkeyup="handleEditorInput()" onmouseup="updateWordCount()">
+                        <p>Start typing your document here...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="word-count">
+                    <span>Pages: <span id="pageCount">1</span></span>
+                    <span>Words: <span id="wordCount">6</span></span>
+                    <span>Characters: <span id="charCount">33</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Speech to Text Button -->
+        <button id="speechToTextBtn" class="speech-btn" title="Start Speech to Text">
+            🎤 Start Dictation
+        </button>
+
+        <!-- AI Assist Button (Add above Speech to Text Button) -->
+        <button id="aiAssistBtn" class="speech-btn" title="Get AI assistance for grammar, spelling, and formatting">
+            ✨ AI Assist
+        </button>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
