@@ -33,8 +33,23 @@ cd docuwrite
 npm install
 ```
 
-3. Create a `.env` file in the root directory and add your API keys:
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Fill in your Firebase configuration values
+   - Add your Gemini API key
+
+Required environment variables:
 ```
+# Firebase Configuration
+FIREBASE_API_KEY=your_firebase_api_key
+FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+FIREBASE_APP_ID=your_firebase_app_id
+FIREBASE_MEASUREMENT_ID=your_firebase_measurement_id
+
+# Gemini API Configuration
 GEMINI_API_KEY=your_gemini_api_key
 ```
 

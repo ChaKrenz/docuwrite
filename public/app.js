@@ -5,13 +5,13 @@
 
 // Firebase configuration and initialization
 const firebaseConfig = {
-    apiKey: "AIzaSyDNvoDdaA5ya83TFcfahUte5XaXDzch_mw",
-    authDomain: "wordwithai.firebaseapp.com",
-    projectId: "wordwithai",
-    storageBucket: "wordwithai.firebasestorage.app",
-    messagingSenderId: "484812862025",
-    appId: "1:484812862025:web:17f97ecf12dafd3e554598",
-    measurementId: "G-72WPSSE1LK"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase and Firestore
